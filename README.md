@@ -6,7 +6,7 @@ This Java 21 web application tracks income, expenses, category budgets, and mont
 | Name | Roll No. | Assigned Module |
 | :--- | :--- | :--- |
 | Badal Kumar | [Your Roll No.] | Project Setup & OOP Models |
-| [Member 2 Name] | [Roll No.] | SQLite JDBC Database |
+| Vikas | 2025UIT3093 | SQLite JDBC Database |
 | [Member 3 Name] | [Roll No.] | Budget Calculations & CSV Export |
 | [Member 4 Name] | [Roll No.] | Java HttpServer & API Routing |
 | [Member 5 Name] | [Roll No.] | Web Dashboard UI & Unit Testing |
