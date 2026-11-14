@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Expense and Budget Tracker</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #f4f6f8;
+      color: #202938;
+      font: 15px Arial, sans-serif;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 20px max(20px, calc((100% - 1160px) / 2));
+      background: white;
+      border-bottom: 1px solid #dfe4ea;
+    }
+    h1 { margin: 0; font-size: 22px; }
+    h2 { margin: 0 0 6px; font-size: 17px; }
+    p { margin: 0; color: #687386; }
+    main { max-width: 1160px; margin: 24px auto; padding: 0 20px 35px; }
+    .header-actions, .filters { display: flex; align-items: center; gap: 8px; }
+    button, input, select, textarea { font: inherit; }
+    button {
+      padding: 9px 12px;
+      border: 1px solid #ccd4de;
+      border-radius: 5px;
+      background: white;
+      color: #263449;
+      cursor: pointer;
+    }
+    button:hover { background: #f1f4f8; }
+    button.primary { color: white; background: #3566c8; border-color: #3566c8; }
+    button.primary:hover { background: #2b56aa; }
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+    .card {
+      padding: 18px;
+      border: 1px solid #dfe4ea;
+      border-radius: 7px;
+      background: white;
+    }
+    .summary p { font-size: 13px; }
+    .summary strong { display: block; margin-top: 9px; font-size: 23px; }
+    .dashboard {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .chart-content { display: flex; align-items: center; justify-content: center; gap: 22px; min-height: 240px; }
+    canvas { width: 210px; height: 210px; }
+    .legend { display: grid; gap: 8px; }
+    .legend-item { display: flex; align-items: center; gap: 7px; color: #4e5a6c; font-size: 13px; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .budget-list { display: grid; gap: 15px; margin-top: 17px; }
+    .budget-title { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 6px; font-size: 13px; }
+    .bar { height: 8px; overflow: hidden; border-radius: 4px; background: #e8ecf1; }
+    .bar span { display: block; height: 100%; background: #5479cc; }
+    .bar span.over { background: #c64c4c; }
+    .alert-list { padding-left: 20px; color: #a33b36; font-size: 13px; }
+    .alerts { margin-top: 17px; }
+    .table-card { margin-bottom: 16px; }
+    .section-heading { display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 14px; }
+    input, select, textarea {
+      width: 100%;
+      min-height: 38px;
+      padding: 8px 9px;
+      border: 1px solid #ccd4de;
+      border-radius: 5px;
+      background: white;
+      color: #202938;
+    }
+    .filters input { width: 210px; }
+    .filters select { width: 130px; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; min-width: 650px; border-collapse: collapse; }
+    th, td { padding: 11px 9px; border-bottom: 1px solid #e7ebef; text-align: left; font-size: 13px; }
+    th { color: #647084; font-size: 11px; font-weight: normal; text-transform: uppercase; }
+    .income { color: #247d5d; }
+    .expense { color: #303b4c; }
+    .delete-button { padding: 5px 8px; color: #9c4040; }
+    .empty-row { padding: 25px; text-align: center; color: #687386; }
+    .forms { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; margin: 14px 0; }
+    .field { display: grid; gap: 5px; }
+    .field label { color: #566276; font-size: 12px; }
+    .field.full { grid-column: 1 / -1; }
+    .form-actions { display: flex; justify-content: flex-end; }
+    .budget-form { display: grid; grid-template-columns: 1fr 1fr auto; align-items: end; gap: 10px; margin-top: 17px; }
+    .status { min-height: 20px; margin: 10px 0; color: #a33b36; font-size: 13px; }
+    @media (max-width: 760px) {
+      header { align-items: flex-start; flex-direction: column; padding: 16px 20px; }
+      main { margin-top: 16px; }
+      .summary { grid-template-columns: 1fr 1fr; }
+      .dashboard, .forms { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+      .header-actions { width: 100%; }
+      .header-actions button { flex: 1; padding: 8px 5px; font-size: 12px; }
+      .chart-content { flex-direction: column; padding-top: 12px; }
+      .legend { grid-template-columns: 1fr 1fr; }
+      .section-heading { align-items: flex-start; flex-direction: column; }
+      .filters { width: 100%; }
+      .filters input { flex: 1; min-width: 0; }
+      .budget-form { grid-template-columns: 1fr 1fr; }
+      .budget-form button { grid-column: 1 / -1; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Smart Expense and Budget Tracker</h1>
+      <p id="today"></p>
+    </div>
+    <div class="header-actions">
+      <button id="sampleButton">Load Sample Data</button>
+      <button id="exportButton">Export CSV</button>
+    </div>
+  </header>
+
+  <main>
+    <p id="status" class="status" role="status"></p>
+
+    <section class="summary">
+      <article class="card"><p>Total Income</p><strong id="incomeTotal">₹0</strong></article>
+      <article class="card"><p>Total Expenses</p><strong id="expenseTotal">₹0</strong></article>
+      <article class="card"><p>Remaining Balance</p><strong id="balanceTotal">₹0</strong></article>
+      <article class="card"><p>Budget Alerts</p><strong id="alertCount">0</strong></article>
+    </section>
+
+    <section class="dashboard">
+      <article class="card">
+        <h2>Expenses by Category</h2>
+        <p>All recorded expenses</p>
+        <div class="chart-content">
+          <canvas id="categoryChart" width="210" height="210">Category chart</canvas>
+          <div id="chartLegend" class="legend"></div>
+        </div>
+      </article>
+      <article class="card">
+        <h2>Monthly Budgets</h2>
+        <p id="budgetMonth"></p>
+        <div id="budgetList" class="budget-list"></div>
+        <div class="alerts">
+          <h2>Budget Alerts</h2>
+          <ul id="alertList" class="alert-list"></ul>
+          <p id="allClear">All categories are within their limits.</p>
+        </div>
+      </article>
+    </section>
+
+    <section class="card table-card">
+      <div class="section-heading">
+        <div><h2>Transactions</h2><p>Search or filter your transactions.</p></div>
+        <div class="filters">
+          <input id="searchInput" type="search" placeholder="Search" aria-label="Search transactions">
+          <select id="typeFilter" aria-label="Filter by type">
+            <option value="ALL">All types</option>
+            <option value="INCOME">Income</option>
+            <option value="EXPENSE">Expense</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Title</th><th>Category</th><th>Date</th><th>Type</th><th>Amount</th><th></th></tr></thead>
+          <tbody id="transactionRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="forms">
+      <article class="card">
+        <h2>Add Transaction</h2>
+        <p>Enter income or an expense.</p>
+        <form id="transactionForm">
+          <div class="form-grid">
+            <div class="field">
+              <label for="transactionType">Type</label>
+              <select id="transactionType"><option value="EXPENSE">Expense</option><option value="INCOME">Income</option></select>
+            </div>
+            <div class="field">
+              <label for="transactionAmount">Amount (₹)</label>
+              <input id="transactionAmount" type="number" min="0.01" step="0.01" required>
+            </div>
+            <div class="field">
+              <label for="transactionTitle">Title</label>
+              <input id="transactionTitle" maxlength="100" required>
+            </div>
+            <div class="field">
+              <label for="transactionCategory">Category</label>
+              <input id="transactionCategory" maxlength="50" required>
+            </div>
+            <div class="field">
+              <label for="transactionDate">Date</label>
+              <input id="transactionDate" type="date" required>
+            </div>
+            <div class="field">
+              <label for="transactionNotes">Notes</label>
+              <input id="transactionNotes" maxlength="300">
+            </div>
+          </div>
+          <div class="form-actions"><button class="primary" type="submit">Add Transaction</button></div>
+        </form>
+      </article>
+
+      <article class="card">
+        <h2>Set Category Budget</h2>
+        <p>Choose a monthly spending limit.</p>
+        <form id="budgetForm" class="budget-form">
+          <div class="field">
+            <label for="budgetCategory">Category</label>
+            <input id="budgetCategory" maxlength="50" required>
+          </div>
+          <div class="field">
+            <label for="budgetAmount">Monthly Limit (₹)</label>
+            <input id="budgetAmount" type="number" min="0.01" step="0.01" required>
+          </div>
+          <button class="primary" type="submit">Save Budget</button>
+        </form>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const colors = ["#4169c1", "#2e9870", "#e3a13b", "#c85151", "#8a65b5", "#368ca0"];
+    let transactions = [];
+    let budgets = {};
+
+    function money(amount) {
+      return new Intl.NumberFormat("en-IN", {
+        style: "currency",
+        currency: "INR",
+        maximumFractionDigits: 2
+      }).format(amount || 0);
+    }
+
+    function escapeHtml(value) {
+      const replacements = { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" };
+      return String(value == null ? "" : value).replace(/[&<>"']/g, function (character) {
+        return replacements[character];
+      });
+    }
+
+    function localDate() {
+      const date = new Date();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return date.getFullYear() + "-" + month + "-" + day;
+    }
+
+    function setStatus(message) {
+      document.getElementById("status").textContent = message;
+    }
+
+    async function loadDashboard() {
+      try {
+        const transactionResponse = await fetch("/api/transactions");
+        const budgetResponse = await fetch("/api/budgets");
+        if (!transactionResponse.ok || !budgetResponse.ok) {
+          throw new Error("Could not load saved data.");
+        }
+        transactions = await transactionResponse.json();
+        budgets = await budgetResponse.json();
+        updateSummary();
+        drawChart();
+        showBudgets();
+        showTransactions();
+        setStatus("");
+      } catch (error) {
+        setStatus(error.message);
+      }
+    }
+
+    function updateSummary() {
+      let income = 0;
+      let expenses = 0;
+      for (const transaction of transactions) {
+        if (transaction.type === "INCOME") {
+          income += Number(transaction.amount);
+        } else {
+          expenses += Number(transaction.amount);
+        }
+      }
+      document.getElementById("incomeTotal").textContent = money(income);
+      document.getElementById("expenseTotal").textContent = money(expenses);
+      document.getElementById("balanceTotal").textContent = money(income - expenses);
+      document.getElementById("today").textContent = new Intl.DateTimeFormat("en-IN", {
+        dateStyle: "full"
+      }).format(new Date());
+      document.getElementById("budgetMonth").textContent = new Intl.DateTimeFormat("en-IN", {
+        month: "long",
+        year: "numeric"
+      }).format(new Date());
+    }
+
+    function categoryTotals() {
+      const totals = {};
+      for (const transaction of transactions) {
+        if (transaction.type === "EXPENSE") {
+          const category = transaction.category;
+          if (!totals[category]) {
+            totals[category] = 0;
+          }
+          totals[category] += Number(transaction.amount);
+        }
+      }
+      return totals;
+    }
+
+    function drawChart() {
+      const canvas = document.getElementById("categoryChart");
+      const context = canvas.getContext("2d");
+      const totals = categoryTotals();
+      const categories = Object.keys(totals);
+      let total = 0;
+      for (const category of categories) {
+        total += totals[category];
+      }
+
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.lineWidth = 28;
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const radius = 72;
+      const legend = document.getElementById("chartLegend");
+      legend.innerHTML = "";
+
+      if (total === 0) {
+        context.beginPath();
+        context.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        context.strokeStyle = "#e3e7ec";
+        context.stroke();
+        legend.textContent = "Add an expense to see the chart.";
+        return;
+      }
+
+      let startAngle = -Math.PI / 2;
+      for (let i = 0; i < categories.length; i++) {
+        const category = categories[i];
+        const share = totals[category] / total;
+        const endAngle = startAngle + share * 2 * Math.PI;
+        context.beginPath();
+        context.arc(centerX, centerY, radius, startAngle, endAngle);
+        context.strokeStyle = colors[i % colors.length];
+        context.stroke();
+
+        const item = document.createElement("div");
+        item.className = "legend-item";
+        item.innerHTML = '<span class="legend-dot" style="background:' + colors[i % colors.length] + '"></span>'
+          + escapeHtml(category) + " " + money(totals[category]);
+        legend.appendChild(item);
+        startAngle = endAngle;
+      }
+    }
+
+    function showBudgets() {
+      const month = localDate().slice(0, 7);
+      const spending = {};
+      for (const transaction of transactions) {
+        if (transaction.type === "EXPENSE" && transaction.date.slice(0, 7) === month) {
+          const category = transaction.category;
+          if (!spending[category]) {
+            spending[category] = 0;
+          }
+          spending[category] += Number(transaction.amount);
+        }
+      }
+
+      const list = document.getElementById("budgetList");
+      const alertList = document.getElementById("alertList");
+      const categories = Object.keys(budgets).sort();
+      const alerts = [];
+      list.innerHTML = "";
+      alertList.innerHTML = "";
+
+      if (categories.length === 0) {
+        list.textContent = "No budgets yet. Add a category budget below.";
+      }
+
+      for (const category of categories) {
+        const limit = Number(budgets[category]);
+        const spent = spending[category] || 0;
+        const percent = Math.min(100, spent / limit * 100);
+        const overBudget = spent > limit;
+        const item = document.createElement("div");
+        item.innerHTML = '<div class="budget-title"><strong>' + escapeHtml(category) + '</strong><span>'
+          + money(spent) + " / " + money(limit) + '</span></div><div class="bar"><span'
+          + (overBudget ? ' class="over"' : '') + ' style="width:' + percent + '%"></span></div>';
+        list.appendChild(item);
+        if (overBudget) {
+          alerts.push(category + " is over by " + money(spent - limit));
+        }
+      }
+
+      for (const alert of alerts) {
+        const item = document.createElement("li");
+        item.textContent = alert;
+        alertList.appendChild(item);
+      }
+      document.getElementById("alertCount").textContent = alerts.length;
+      document.getElementById("allClear").hidden = alerts.length > 0;
+    }
+
+    function showTransactions() {
+      const search = document.getElementById("searchInput").value.toLowerCase().trim();
+      const type = document.getElementById("typeFilter").value;
+      const rows = document.getElementById("transactionRows");
+      let html = "";
+      let count = 0;
+
+      for (const transaction of transactions) {
+        const description = (transaction.title + " " + transaction.category + " " + transaction.notes).toLowerCase();
+        if ((type !== "ALL" && transaction.type !== type) || !description.includes(search)) {
+          continue;
+        }
+        const label = transaction.type === "INCOME" ? "Income" : "Expense";
+        const amountClass = transaction.type === "INCOME" ? "income" : "expense";
+        const sign = transaction.type === "INCOME" ? "+" : "−";
+        const date = new Date(transaction.date + "T00:00:00");
+        html += "<tr><td><strong>" + escapeHtml(transaction.title) + "</strong><br>"
+          + escapeHtml(transaction.notes) + "</td><td>" + escapeHtml(transaction.category)
+          + "</td><td>" + new Intl.DateTimeFormat("en-IN", { dateStyle: "medium" }).format(date)
+          + "</td><td>" + label + "</td><td class=" + amountClass + ">" + sign + money(transaction.amount)
+          + '</td><td><button class="delete-button" data-id="' + Number(transaction.id)
+          + '" type="button">Delete</button></td></tr>';
+        count++;
+      }
+
+      if (count === 0) {
+        html = '<tr><td class="empty-row" colspan="6">No transactions found.</td></tr>';
+      }
+      rows.innerHTML = html;
+    }
+
+    document.getElementById("transactionDate").value = localDate();
+
+    document.getElementById("transactionForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      const transaction = {
+        type: document.getElementById("transactionType").value,
+        title: document.getElementById("transactionTitle").value,
+        amount: Number(document.getElementById("transactionAmount").value),
+        category: document.getElementById("transactionCategory").value,
+        date: document.getElementById("transactionDate").value,
+        notes: document.getElementById("transactionNotes").value
+      };
+      const response = await fetch("/api/transactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(transaction)
+      });
+      if (!response.ok) {
+        setStatus("Could not save the transaction.");
+        return;
+      }
+      event.target.reset();
+      document.getElementById("transactionDate").value = localDate();
+      setStatus("Transaction saved.");
+      await loadDashboard();
+    });
+
+    document.getElementById("budgetForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      const budget = {
+        category: document.getElementById("budgetCategory").value,
+        monthlyLimit: Number(document.getElementById("budgetAmount").value)
+      };
+      const response = await fetch("/api/budgets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(budget)
+      });
+      if (!response.ok) {
+        setStatus("Could not save the budget.");
+        return;
+      }
+      event.target.reset();
+      setStatus("Budget saved.");
+      await loadDashboard();
+    });
+
+    document.getElementById("transactionRows").addEventListener("click", async function (event) {
+      const button = event.target.closest("[data-id]");
+      if (!button) {
+        return;
+      }
+      const response = await fetch("/api/transactions?id=" + button.dataset.id, { method: "DELETE" });
+      if (!response.ok) {
+        setStatus("Could not delete the transaction.");
+        return;
+      }
+      await loadDashboard();
+    });
+
+    document.getElementById("searchInput").addEventListener("input", showTransactions);
+    document.getElementById("typeFilter").addEventListener("change", showTransactions);
+
+    document.getElementById("sampleButton").addEventListener("click", async function () {
+      const response = await fetch("/api/sample-data", { method: "POST" });
+      if (!response.ok) {
+        setStatus("Could not load sample data.");
+        return;
+      }
+      setStatus("Sample data loaded.");
+      await loadDashboard();
+    });
+
+    document.getElementById("exportButton").addEventListener("click", function () {
+      window.location.href = "/api/export-csv";
+    });
+
+    loadDashboard();
+  </script>
+</body>
+</html>
