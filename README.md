@@ -5,11 +5,11 @@ This Java 21 web application tracks income, expenses, category budgets, and mont
 ## Team Members
 | Name | Roll No. | Assigned Module |
 | :--- | :--- | :--- |
-| Badal Kumar | [Your Roll No.] | Project Setup & OOP Models |
-| Vikas | 2025UIT3093 | SQLite JDBC Database |
+| Badal Kumar | 2025UIT3109 | Project Setup & OOP Models & Web Dashboard UI |
+| Vikas | 2025UIT3093 | SQLite JDBC Database & Unit Testing |
 | Gaurav|2025UIT3122 | Budget Calculations & CSV Export |
 | [Member 4 Name] | [Roll No.] | Java HttpServer & API Routing |
-| [Member 5 Name] | [Roll No.] | Web Dashboard UI & Unit Testing |
+
 
 ## Key Features
 - Record and delete income and expense transactions across categories
