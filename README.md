@@ -11,6 +11,11 @@ This Java 21 web application tracks income, expenses, category budgets, and mont
 | [Member 4 Name] | [Roll No.] | Java HttpServer & API Routing |
 
 
+## Screenshots
+
+![Smart Expense and Budget Tracker Dashboard](image.png?raw=true)
+
+
 ## Key Features
 - Record and delete income and expense transactions across categories
 - Set monthly spending limits per category with automatic budget alert warnings
